@@ -30,7 +30,6 @@ const ReportView: React.FC<ReportViewProps> = ({ project, onBack }) => {
           projectSummary += `*${idx + 1}. ${m.code || 'S/C'}* - ${typeName}\n`;
           projectSummary += `📐 ${m.width} x ${m.height} mm\n`;
           
-          // Información de Tapajuntas en el resumen compartido
           if (m.tapajuntas && (m.tapajuntas.top || m.tapajuntas.bottom || m.tapajuntas.left || m.tapajuntas.right)) {
             const sides = [];
             if (m.tapajuntas.top) sides.push('SUP');
@@ -60,11 +59,8 @@ const ReportView: React.FC<ReportViewProps> = ({ project, onBack }) => {
       } catch (err) {
         if ((err as Error).name !== 'AbortError') {
           console.error('Error al compartir:', err);
-          alert('No se pudo compartir el contenido.');
         }
       }
-    } else {
-      alert('La función de compartir no está disponible en este navegador.');
     }
   };
 
@@ -93,6 +89,7 @@ const ReportView: React.FC<ReportViewProps> = ({ project, onBack }) => {
       </div>
 
       <div className="bg-white p-4 md:p-8 border border-slate-100 rounded-[1.5rem] print:p-0 print:border-none print:shadow-none min-h-[297mm] shadow-2xl">
+        {/* Header */}
         <div className="flex justify-between items-end border-b-2 border-slate-900 pb-3 mb-4">
           <div>
             <h1 className="text-xl font-black text-slate-900 leading-none">ARISTA ESTUDIO</h1>
@@ -104,6 +101,7 @@ const ReportView: React.FC<ReportViewProps> = ({ project, onBack }) => {
           </div>
         </div>
 
+        {/* Info Proyecto */}
         <div className="grid grid-cols-4 gap-2 mb-4 bg-slate-50 p-3 rounded-xl border border-slate-100">
           <div className="flex flex-col">
             <span className="text-[6px] font-black text-slate-400 uppercase tracking-widest">Línea</span>
@@ -123,6 +121,7 @@ const ReportView: React.FC<ReportViewProps> = ({ project, onBack }) => {
           </div>
         </div>
 
+        {/* Lista de Aberturas */}
         <div className="space-y-2">
           {project.measurements.map((m, idx) => {
             const xs = m.modules.map(mod => mod.x);
@@ -142,26 +141,27 @@ const ReportView: React.FC<ReportViewProps> = ({ project, onBack }) => {
             const partialWidths = cRatios.map(r => Math.round((r / totalColRatio) * safeW));
             const partialHeights = rRatios.map(r => Math.round((r / totalRowRatio) * safeH));
 
-            const moduleTypes = m.modules.map(mod => OPENING_TYPES.find(t => t.id === mod.typeId)?.name || '');
-            const uniqueModuleTypes = Array.from(new Set(moduleTypes));
-            const componentsText = uniqueModuleTypes.join(' + ');
+            const hasTapajuntas = m.tapajuntas && (m.tapajuntas.top || m.tapajuntas.bottom || m.tapajuntas.left || m.tapajuntas.right);
 
             return (
-              <div key={m.id} className="avoid-break bg-white p-3 border border-slate-200 rounded-xl flex flex-col gap-2 min-h-[140px]">
+              <div key={m.id} className="avoid-break bg-white p-3 border border-slate-200 rounded-xl flex flex-col gap-2 min-h-[140px] relative">
                 <div className="flex flex-row items-center gap-4">
-                  <div className="w-[120px] flex-shrink-0 flex flex-col items-center justify-center relative bg-[#fafbfc] rounded-lg border border-slate-50 overflow-visible py-2">
+                  {/* ESQUEMA TÉCNICO */}
+                  <div className="w-[125px] flex-shrink-0 flex flex-col items-center justify-center relative bg-[#fafbfc] rounded-lg border border-slate-50 py-3">
                     <div className="relative w-full h-full max-w-[70%] max-h-[70%] flex items-center justify-center overflow-visible">
+                        {/* Cotas */}
                         <div className="absolute -top-5 left-0 right-0 flex items-center px-1">
-                          <div className="h-[0.5px] bg-slate-200 flex-1"></div>
-                          <span className="mx-0.5 text-slate-400 font-black text-[6px] tabular-nums">{m.width}</span>
-                          <div className="h-[0.5px] bg-slate-200 flex-1"></div>
+                          <div className="h-[0.5px] bg-slate-300 flex-1"></div>
+                          <span className="mx-0.5 text-slate-500 font-black text-[6px] tabular-nums">{m.width}</span>
+                          <div className="h-[0.5px] bg-slate-300 flex-1"></div>
                         </div>
                         <div className="absolute -right-6 top-0 bottom-0 flex flex-col items-center justify-center py-1">
-                          <div className="w-[0.5px] bg-slate-200 flex-1"></div>
-                          <span className="my-0.5 text-slate-400 font-black text-[6px] [writing-mode:vertical-lr] tabular-nums">{m.height}</span>
-                          <div className="w-[0.5px] bg-slate-200 flex-1"></div>
+                          <div className="w-[0.5px] bg-slate-300 flex-1"></div>
+                          <span className="my-0.5 text-slate-500 font-black text-[6px] [writing-mode:vertical-lr] tabular-nums">{m.height}</span>
+                          <div className="w-[0.5px] bg-slate-300 flex-1"></div>
                         </div>
 
+                        {/* Abertura */}
                         <div 
                           className="relative flex flex-col items-center justify-center" 
                           style={{ 
@@ -170,12 +170,12 @@ const ReportView: React.FC<ReportViewProps> = ({ project, onBack }) => {
                             height: safeH > safeW ? '100%' : 'auto'
                           }}
                         >
-                          <div className="w-full h-full relative bg-white border-[2px] border-[#1e293b] overflow-visible">
-                            {/* Tapajuntas Visuales - Usamos colores fuertes para el PDF */}
-                            {m.tapajuntas?.top && <div className="absolute -top-[4px] -left-[4px] -right-[4px] h-[4px] bg-[#2563eb] z-20" />}
-                            {m.tapajuntas?.bottom && <div className="absolute -bottom-[4px] -left-[4px] -right-[4px] h-[4px] bg-[#2563eb] z-20" />}
-                            {m.tapajuntas?.left && <div className="absolute -left-[4px] -top-[4px] -bottom-[4px] w-[4px] bg-[#2563eb] z-20" />}
-                            {m.tapajuntas?.right && <div className="absolute -right-[4px] -top-[4px] -bottom-[4px] w-[4px] bg-[#2563eb] z-20" />}
+                          <div className="w-full h-full relative bg-white border-[2.5px] border-[#1e293b] overflow-visible">
+                            {/* Tapajuntas Visuales - Con borde para impresión BN */}
+                            {m.tapajuntas?.top && <div className="absolute -top-[5px] -left-[5px] -right-[5px] h-[5px] bg-[#2563eb] border-b border-white z-20" />}
+                            {m.tapajuntas?.bottom && <div className="absolute -bottom-[5px] -left-[5px] -right-[5px] h-[5px] bg-[#2563eb] border-t border-white z-20" />}
+                            {m.tapajuntas?.left && <div className="absolute -left-[5px] -top-[5px] -bottom-[5px] w-[5px] bg-[#2563eb] border-r border-white z-20" />}
+                            {m.tapajuntas?.right && <div className="absolute -right-[5px] -top-[5px] -bottom-[5px] w-[5px] bg-[#2563eb] border-l border-white z-20" />}
 
                             <div 
                               className="w-full h-full grid gap-[1px] bg-[#1e293b]"
@@ -197,12 +197,13 @@ const ReportView: React.FC<ReportViewProps> = ({ project, onBack }) => {
                     </div>
                   </div>
 
+                  {/* DETALLES TÉCNICOS */}
                   <div className="flex-1 grid grid-cols-3 gap-x-4 gap-y-1 py-1">
-                    <div className="col-span-3 border-b border-slate-50 pb-1 mb-1">
+                    <div className="col-span-3 border-b border-slate-100 pb-1 mb-1">
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-2">
                           <div className="w-4 h-4 bg-slate-900 text-white flex items-center justify-center rounded font-black text-[8px]">{idx + 1}</div>
-                          <span className="text-[9px] font-black text-slate-800 uppercase tracking-tight truncate max-w-[200px]">
+                          <span className="text-[10px] font-black text-slate-800 uppercase tracking-tight truncate max-w-[200px]">
                             {m.modules.length > 1 ? 'CONJUNTO ARISTA' : OPENING_TYPES.find(t => t.id === m.modules[0].typeId)?.name}
                           </span>
                         </div>
@@ -212,12 +213,12 @@ const ReportView: React.FC<ReportViewProps> = ({ project, onBack }) => {
 
                     <div className="flex flex-col">
                       <span className="text-[6px] font-black text-slate-300 uppercase tracking-widest">Medida</span>
-                      <span className="text-[10px] font-bold text-slate-700 leading-none">{m.width} x {m.height} mm</span>
+                      <span className="text-[10px] font-bold text-slate-800 leading-none">{m.width} x {m.height} mm</span>
                     </div>
 
                     <div className="flex flex-col">
                       <span className="text-[6px] font-black text-slate-300 uppercase tracking-widest">Ubicación</span>
-                      <span className="text-[9px] font-bold text-slate-600 uppercase truncate leading-none">{m.location || 'S/U'}</span>
+                      <span className="text-[9px] font-bold text-slate-700 uppercase truncate leading-none">{m.location || 'S/U'}</span>
                     </div>
 
                     <div className="flex flex-col">
@@ -225,28 +226,32 @@ const ReportView: React.FC<ReportViewProps> = ({ project, onBack }) => {
                       <span className="text-[9px] font-black text-blue-700 uppercase leading-none truncate">{m.glass || 'A DEFINIR'}</span>
                     </div>
 
-                    <div className="col-span-3 flex gap-3 mt-1 pt-1 border-t border-slate-50">
+                    <div className="col-span-3 flex gap-3 mt-1 pt-2 border-t border-slate-50">
+                      {/* Tapajuntas Detallado */}
                       <div className="flex flex-col flex-1">
-                         <span className="text-[6px] font-black text-slate-300 uppercase block leading-none">Tapajuntas</span>
-                         <div className="flex flex-wrap gap-1 mt-0.5">
-                          {m.tapajuntas && (m.tapajuntas.top || m.tapajuntas.bottom || m.tapajuntas.left || m.tapajuntas.right) ? (
+                         <span className="text-[6px] font-black text-slate-400 uppercase block leading-none mb-1">Tapajuntas</span>
+                         <div className="flex flex-wrap gap-1">
+                          {hasTapajuntas ? (
                             (['top', 'bottom', 'left', 'right'] as const).filter(s => m.tapajuntas[s]).map(s => (
-                              <span key={s} className="bg-blue-600 text-white px-1.5 py-0.2 rounded-[2px] text-[6px] font-black uppercase shadow-sm">
-                                {s === 'top' ? 'SUP' : s === 'bottom' ? 'INF' : s === 'left' ? 'IZQ' : 'DER'}
+                              <span key={s} className="bg-blue-600 text-white px-2 py-0.5 rounded-[2px] text-[7px] font-extrabold border border-blue-700 uppercase">
+                                {s === 'top' ? 'SUPERIOR' : s === 'bottom' ? 'INFERIOR' : s === 'left' ? 'IZQUIERDA' : 'DERECHA'}
                               </span>
                             ))
-                          ) : <span className="text-[5px] text-slate-200 font-bold uppercase">Sin Tapajuntas</span>}
+                          ) : (
+                            <span className="text-[6px] text-slate-300 font-bold uppercase">Sin tapajuntas</span>
+                          )}
                          </div>
                       </div>
                       
+                      {/* Divisiones */}
                       {(cols > 1 || rows > 1) && (
-                        <div className="flex-2 flex gap-2">
+                        <div className="flex-2 flex gap-3">
                           {cols > 1 && (
                             <div>
                               <span className="text-[5px] font-black text-slate-300 uppercase block leading-none">Anchos</span>
                               <div className="flex gap-1 mt-0.5">
                                 {partialWidths.map((pw, i) => (
-                                  <span key={i} className="text-[7px] font-bold text-slate-500 tabular-nums">H{i+1}:{pw}</span>
+                                  <span key={i} className="text-[7px] font-bold text-slate-600 tabular-nums">H{i+1}:{pw}</span>
                                 ))}
                               </div>
                             </div>
@@ -256,7 +261,7 @@ const ReportView: React.FC<ReportViewProps> = ({ project, onBack }) => {
                               <span className="text-[5px] font-black text-slate-300 uppercase block leading-none">Altos</span>
                               <div className="flex gap-1 mt-0.5">
                                 {partialHeights.map((ph, i) => (
-                                  <span key={i} className="text-[7px] font-bold text-slate-500 tabular-nums">F{i+1}:{ph}</span>
+                                  <span key={i} className="text-[7px] font-bold text-slate-600 tabular-nums">F{i+1}:{ph}</span>
                                 ))}
                               </div>
                             </div>
@@ -267,8 +272,9 @@ const ReportView: React.FC<ReportViewProps> = ({ project, onBack }) => {
                   </div>
                 </div>
                 
+                {/* Notas */}
                 {m.notes && (
-                  <div className="px-2 py-1 bg-slate-50 rounded border-l-2 border-slate-200 mt-1">
+                  <div className="px-3 py-1.5 bg-slate-50 rounded-lg border-l-2 border-slate-200 mt-1">
                     <p className="text-[7px] font-bold text-slate-500 uppercase italic">
                       Observaciones: <span className="font-medium normal-case text-slate-600 tracking-normal">{m.notes}</span>
                     </p>
@@ -279,9 +285,10 @@ const ReportView: React.FC<ReportViewProps> = ({ project, onBack }) => {
           })}
         </div>
 
-        <div className="mt-4 pt-2 border-t border-slate-100 flex justify-between items-center text-slate-300">
-           <span className="text-[6px] font-black uppercase tracking-[0.2em]">ARISTA ESTUDIO • SISTEMA TÉCNICO</span>
-           <span className="text-[6px] font-bold uppercase tracking-widest">Documento de Obra</span>
+        {/* Footer */}
+        <div className="mt-6 pt-3 border-t border-slate-100 flex justify-between items-center text-slate-300">
+           <span className="text-[6px] font-black uppercase tracking-[0.2em]">ARISTA ESTUDIO • SISTEMA TÉCNICO DE MEDICIÓN</span>
+           <span className="text-[7px] font-bold uppercase tracking-widest text-slate-400">PÁGINA 1 DE 1</span>
         </div>
       </div>
     </div>
