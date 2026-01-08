@@ -1,0 +1,7 @@
+{
+  "name": "Medidor Pro - Aberturas",
+  "description": "Herramienta profesional para carpinteros y vidrieros para la toma de medidas de aberturas en obra con esquemas técnicos y generación de reportes PDF.",
+  "requestFramePermissions": [
+    "camera"
+  ]
+}
