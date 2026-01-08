@@ -14,15 +14,43 @@ const ReportView: React.FC<ReportViewProps> = ({ project, onBack }) => {
   const handleShare = async () => {
     if (navigator.share) {
       try {
-        const textSummary = `Planilla Técnica - Arista Estudio\nProyecto: ${project.name}\nCliente: ${project.client}\nObra: ${project.address || 'S/D'}\nTotal Aberturas: ${project.measurements.length}`;
-        
-        // Objeto de datos para compartir
+        let projectSummary = `📋 *PLANILLA TÉCNICA - ARISTA ESTUDIO*\n`;
+        projectSummary += `━━━━━━━━━━━━━━━━━━━━━\n`;
+        projectSummary += `🏗️ *Proyecto:* ${project.name}\n`;
+        projectSummary += `👤 *Cliente:* ${project.client}\n`;
+        projectSummary += `📍 *Obra:* ${project.address || 'No especificada'}\n`;
+        projectSummary += `🎨 *Línea/Color:* ${project.line || '-'} / ${project.color || '-'}\n`;
+        projectSummary += `━━━━━━━━━━━━━━━━━━━━━\n\n`;
+
+        project.measurements.forEach((m, idx) => {
+          const typeName = m.modules.length > 1 
+            ? 'CONJUNTO' 
+            : OPENING_TYPES.find(t => t.id === m.modules[0].typeId)?.name || 'ABERTURA';
+          
+          projectSummary += `*${idx + 1}. ${m.code || 'S/C'}* - ${typeName}\n`;
+          projectSummary += `📐 ${m.width} x ${m.height} mm\n`;
+          
+          // Información de Tapajuntas en el resumen compartido
+          if (m.tapajuntas && (m.tapajuntas.top || m.tapajuntas.bottom || m.tapajuntas.left || m.tapajuntas.right)) {
+            const sides = [];
+            if (m.tapajuntas.top) sides.push('SUP');
+            if (m.tapajuntas.bottom) sides.push('INF');
+            if (m.tapajuntas.left) sides.push('IZQ');
+            if (m.tapajuntas.right) sides.push('DER');
+            projectSummary += `🖼️ Tapajuntas: ${sides.join(', ')}\n`;
+          }
+
+          if (m.location) projectSummary += `📍 Ubicación: ${m.location}\n`;
+          if (m.glass) projectSummary += `💎 Vidrio: ${m.glass}\n`;
+          if (m.notes) projectSummary += `💬 Notas: ${m.notes}\n`;
+          projectSummary += `─────────────────────\n`;
+        });
+
         const shareData: ShareData = {
           title: `Reporte Arista - ${project.name}`,
-          text: textSummary,
+          text: projectSummary,
         };
 
-        // Validar que la URL sea válida antes de incluirla (evita errores en entornos locales o restringidos)
         const currentUrl = window.location.href;
         if (currentUrl.startsWith('http')) {
           shareData.url = currentUrl;
@@ -30,14 +58,13 @@ const ReportView: React.FC<ReportViewProps> = ({ project, onBack }) => {
 
         await navigator.share(shareData);
       } catch (err) {
-        // El error AbortError ocurre si el usuario cancela, no lo mostramos como error fatal
         if ((err as Error).name !== 'AbortError') {
           console.error('Error al compartir:', err);
-          alert('No se pudo compartir el enlace directamente. Intenta usar la función de impresión.');
+          alert('No se pudo compartir el contenido.');
         }
       }
     } else {
-      alert('La función de compartir no está disponible en este navegador. Usa "Imprimir" para generar un PDF.');
+      alert('La función de compartir no está disponible en este navegador.');
     }
   };
 
@@ -66,7 +93,6 @@ const ReportView: React.FC<ReportViewProps> = ({ project, onBack }) => {
       </div>
 
       <div className="bg-white p-4 md:p-8 border border-slate-100 rounded-[1.5rem] print:p-0 print:border-none print:shadow-none min-h-[297mm] shadow-2xl">
-        {/* Header Ultra-Compacto */}
         <div className="flex justify-between items-end border-b-2 border-slate-900 pb-3 mb-4">
           <div>
             <h1 className="text-xl font-black text-slate-900 leading-none">ARISTA ESTUDIO</h1>
@@ -78,7 +104,6 @@ const ReportView: React.FC<ReportViewProps> = ({ project, onBack }) => {
           </div>
         </div>
 
-        {/* Info Proyecto Compacta */}
         <div className="grid grid-cols-4 gap-2 mb-4 bg-slate-50 p-3 rounded-xl border border-slate-100">
           <div className="flex flex-col">
             <span className="text-[6px] font-black text-slate-400 uppercase tracking-widest">Línea</span>
@@ -98,7 +123,6 @@ const ReportView: React.FC<ReportViewProps> = ({ project, onBack }) => {
           </div>
         </div>
 
-        {/* Listado de Aberturas */}
         <div className="space-y-2">
           {project.measurements.map((m, idx) => {
             const xs = m.modules.map(mod => mod.x);
@@ -125,7 +149,6 @@ const ReportView: React.FC<ReportViewProps> = ({ project, onBack }) => {
             return (
               <div key={m.id} className="avoid-break bg-white p-3 border border-slate-200 rounded-xl flex flex-col gap-2 min-h-[140px]">
                 <div className="flex flex-row items-center gap-4">
-                  {/* DIBUJO TÉCNICO */}
                   <div className="w-[120px] flex-shrink-0 flex flex-col items-center justify-center relative bg-[#fafbfc] rounded-lg border border-slate-50 overflow-visible py-2">
                     <div className="relative w-full h-full max-w-[70%] max-h-[70%] flex items-center justify-center overflow-visible">
                         <div className="absolute -top-5 left-0 right-0 flex items-center px-1">
@@ -148,10 +171,11 @@ const ReportView: React.FC<ReportViewProps> = ({ project, onBack }) => {
                           }}
                         >
                           <div className="w-full h-full relative bg-white border-[2px] border-[#1e293b] overflow-visible">
-                            {m.tapajuntas?.top && <div className="absolute -top-[5px] -left-[5px] -right-[5px] h-[3px] bg-[#2563eb] z-20" />}
-                            {m.tapajuntas?.bottom && <div className="absolute -bottom-[5px] -left-[5px] -right-[5px] h-[3px] bg-[#2563eb] z-20" />}
-                            {m.tapajuntas?.left && <div className="absolute -left-[5px] -top-[5px] -bottom-[5px] w-[3px] bg-[#2563eb] z-20" />}
-                            {m.tapajuntas?.right && <div className="absolute -right-[5px] -top-[5px] -bottom-[5px] w-[3px] bg-[#2563eb] z-20" />}
+                            {/* Tapajuntas Visuales - Usamos colores fuertes para el PDF */}
+                            {m.tapajuntas?.top && <div className="absolute -top-[4px] -left-[4px] -right-[4px] h-[4px] bg-[#2563eb] z-20" />}
+                            {m.tapajuntas?.bottom && <div className="absolute -bottom-[4px] -left-[4px] -right-[4px] h-[4px] bg-[#2563eb] z-20" />}
+                            {m.tapajuntas?.left && <div className="absolute -left-[4px] -top-[4px] -bottom-[4px] w-[4px] bg-[#2563eb] z-20" />}
+                            {m.tapajuntas?.right && <div className="absolute -right-[4px] -top-[4px] -bottom-[4px] w-[4px] bg-[#2563eb] z-20" />}
 
                             <div 
                               className="w-full h-full grid gap-[1px] bg-[#1e293b]"
@@ -173,7 +197,6 @@ const ReportView: React.FC<ReportViewProps> = ({ project, onBack }) => {
                     </div>
                   </div>
 
-                  {/* DETALLES */}
                   <div className="flex-1 grid grid-cols-3 gap-x-4 gap-y-1 py-1">
                     <div className="col-span-3 border-b border-slate-50 pb-1 mb-1">
                       <div className="flex items-center justify-between">
@@ -185,11 +208,6 @@ const ReportView: React.FC<ReportViewProps> = ({ project, onBack }) => {
                         </div>
                         <div className="bg-[#1e293b] text-white px-1.5 py-0.5 rounded font-black text-[8px] uppercase">{m.code || 'S/C'}</div>
                       </div>
-                      {m.modules.length > 1 && (
-                        <p className="text-[6px] font-bold text-[#0078D4] uppercase tracking-wider mt-0.5 ml-6 italic opacity-80">
-                          Compuesto por: {componentsText}
-                        </p>
-                      )}
                     </div>
 
                     <div className="flex flex-col">
@@ -213,7 +231,7 @@ const ReportView: React.FC<ReportViewProps> = ({ project, onBack }) => {
                          <div className="flex flex-wrap gap-1 mt-0.5">
                           {m.tapajuntas && (m.tapajuntas.top || m.tapajuntas.bottom || m.tapajuntas.left || m.tapajuntas.right) ? (
                             (['top', 'bottom', 'left', 'right'] as const).filter(s => m.tapajuntas[s]).map(s => (
-                              <span key={s} className="bg-blue-50 text-blue-600 px-1 py-0.2 rounded text-[5px] font-black border border-blue-100 uppercase">
+                              <span key={s} className="bg-blue-600 text-white px-1.5 py-0.2 rounded-[2px] text-[6px] font-black uppercase shadow-sm">
                                 {s === 'top' ? 'SUP' : s === 'bottom' ? 'INF' : s === 'left' ? 'IZQ' : 'DER'}
                               </span>
                             ))
@@ -249,7 +267,6 @@ const ReportView: React.FC<ReportViewProps> = ({ project, onBack }) => {
                   </div>
                 </div>
                 
-                {/* Notas/Detalles del usuario en el reporte */}
                 {m.notes && (
                   <div className="px-2 py-1 bg-slate-50 rounded border-l-2 border-slate-200 mt-1">
                     <p className="text-[7px] font-bold text-slate-500 uppercase italic">
@@ -262,7 +279,6 @@ const ReportView: React.FC<ReportViewProps> = ({ project, onBack }) => {
           })}
         </div>
 
-        {/* Footer Ultra-Mini */}
         <div className="mt-4 pt-2 border-t border-slate-100 flex justify-between items-center text-slate-300">
            <span className="text-[6px] font-black uppercase tracking-[0.2em]">ARISTA ESTUDIO • SISTEMA TÉCNICO</span>
            <span className="text-[6px] font-bold uppercase tracking-widest">Documento de Obra</span>
