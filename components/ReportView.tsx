@@ -11,6 +11,36 @@ interface ReportViewProps {
 const ReportView: React.FC<ReportViewProps> = ({ project, onBack }) => {
   const handlePrint = () => window.print();
 
+  const handleShare = async () => {
+    if (navigator.share) {
+      try {
+        const textSummary = `Planilla Técnica - Arista Estudio\nProyecto: ${project.name}\nCliente: ${project.client}\nObra: ${project.address || 'S/D'}\nTotal Aberturas: ${project.measurements.length}`;
+        
+        // Objeto de datos para compartir
+        const shareData: ShareData = {
+          title: `Reporte Arista - ${project.name}`,
+          text: textSummary,
+        };
+
+        // Validar que la URL sea válida antes de incluirla (evita errores en entornos locales o restringidos)
+        const currentUrl = window.location.href;
+        if (currentUrl.startsWith('http')) {
+          shareData.url = currentUrl;
+        }
+
+        await navigator.share(shareData);
+      } catch (err) {
+        // El error AbortError ocurre si el usuario cancela, no lo mostramos como error fatal
+        if ((err as Error).name !== 'AbortError') {
+          console.error('Error al compartir:', err);
+          alert('No se pudo compartir el enlace directamente. Intenta usar la función de impresión.');
+        }
+      }
+    } else {
+      alert('La función de compartir no está disponible en este navegador. Usa "Imprimir" para generar un PDF.');
+    }
+  };
+
   return (
     <div className="space-y-4 max-w-5xl mx-auto pb-20 px-2">
       <div className="flex justify-between items-center no-print mb-4">
@@ -18,9 +48,21 @@ const ReportView: React.FC<ReportViewProps> = ({ project, onBack }) => {
           <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" /></svg>
           Volver
         </button>
-        <button onClick={handlePrint} className="bg-blue-600 text-white px-6 py-3 rounded-2xl font-black text-xs shadow-xl uppercase tracking-widest hover:bg-blue-700 active:scale-95 transition-all">
-          Imprimir PDF A4
-        </button>
+        <div className="flex gap-2">
+          <button 
+            onClick={handleShare}
+            className="bg-white border-2 border-slate-200 text-slate-600 px-4 py-3 rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-slate-50 active:scale-95 transition-all flex items-center gap-2"
+          >
+            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" /></svg>
+            Compartir
+          </button>
+          <button 
+            onClick={handlePrint} 
+            className="bg-blue-600 text-white px-6 py-3 rounded-2xl font-black text-xs shadow-xl uppercase tracking-widest hover:bg-blue-700 active:scale-95 transition-all"
+          >
+            Imprimir PDF
+          </button>
+        </div>
       </div>
 
       <div className="bg-white p-4 md:p-8 border border-slate-100 rounded-[1.5rem] print:p-0 print:border-none print:shadow-none min-h-[297mm] shadow-2xl">
@@ -102,7 +144,7 @@ const ReportView: React.FC<ReportViewProps> = ({ project, onBack }) => {
                           style={{ 
                             aspectRatio: `${safeW} / ${safeH}`,
                             width: safeW >= safeH ? '100%' : 'auto',
-                            height: safeW < safeH ? '100%' : 'auto'
+                            height: safeH > safeW ? '100%' : 'auto'
                           }}
                         >
                           <div className="w-full h-full relative bg-white border-[2px] border-[#1e293b] overflow-visible">
